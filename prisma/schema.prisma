@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Source {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  name      String
+  type      String
+  api       String
+  enabled   Boolean  @default(true)
+  searchable Boolean  @default(true)
+  quickSearch Boolean @default(true)
+  filterable Boolean  @default(true)
+  rawConfig String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  priority Int @default(0)
+  lastCheckedAt DateTime?
+  lastLatencyMs Int?
+  successCount Int @default(0)
+  failCount Int @default(0)
+  lastError String?
+  collectionStatus String @default("idle")
+  lastCollectedAt DateTime?
+  collectedCount Int @default(0)
+  collectionError String?
+  videos    Video[]
+  userAccess UserSource[]
+  categoryBindings CategoryBinding[]
+}
+
+model Video {
+  id        String         @id @default(cuid())
+  sourceKey String
+  title     String
+  cover     String?
+  year      Int?
+  category  String?
+  area      String?
+  language  String?
+  tags      String?
+  desc      String?
+  director  String?
+  actors    String?
+  visible   Boolean        @default(true)
+  featured  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  source    Source         @relation(fields: [sourceKey], references: [key], onDelete: Cascade)
+
+  @@index([sourceKey, category, updatedAt])
+}
+
+model Episode {
+  id        String         @id @default(cuid())
+  videoId   String
+  lineName  String
+  name      String
+  url       String
+  type      String         @default("mp4")
+  sortOrder Int            @default(0)
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  sourceKey String
+  videoId   String
+  title     String
+  cover     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model WatchHistory {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  sourceKey   String
+  videoId     String
+  episodeId   String?
+  title       String
+  cover       String?
+  episodeName String?
+  progress    Float    @default(0)
+  duration    Float    @default(0)
+  completed   Boolean  @default(false)
+  startedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, updatedAt])
+  @@index([videoId])
+}
+
+model Danmaku {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  sourceKey String
+  videoId   String
+  episodeId String
+  content   String
+  videoTime Float
+  simulated Boolean  @default(false)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([episodeId, videoTime])
+  @@index([createdAt])
+}
+
+model SearchStat {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  keyword   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([keyword])
+}
+
+model PlaybackError {
+  id           Int      @id @default(autoincrement())
+  userId       Int?
+  sourceKey    String
+  videoId      String
+  episodeId    String?
+  errorType    String
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([sourceKey, createdAt])
+}
+
+model AdminLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model CategoryBinding {
+  id             Int      @id @default(autoincrement())
+  sourceKey      String
+  remoteCategory String
+  localCategory  String
+  enabled        Boolean  @default(true)
+  source         Source   @relation(fields: [sourceKey], references: [key], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([sourceKey, remoteCategory])
+  @@index([sourceKey, localCategory])
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  username     String       @unique
+  displayName  String?
+  avatarUrl    String?
+  lastLoginAt  DateTime?
+  lastActiveAt DateTime?
+  passwordHash String
+  role         String       @default("user")
+  enabled      Boolean      @default(true)
+  pageAccess   String       @default("home,sources,search,favorites,history")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  sourceAccess UserSource[]
+  sessions     Session[]
+}
+
+model UserSource {
+  id       Int    @id @default(autoincrement())
+  userId   Int
+  sourceKey String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source   Source @relation(fields: [sourceKey], references: [key], onDelete: Cascade)
+
+  @@unique([userId, sourceKey])
+}
+
+model Session {
+  token     String   @id
+  userId    Int
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}

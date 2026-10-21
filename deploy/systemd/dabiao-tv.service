@@ -1,0 +1,17 @@
+[Unit]
+Description=大彪TV Web TVBox
+After=network.target
+
+[Service]
+Type=simple
+User=dabiao
+WorkingDirectory=/opt/dabiao-tv
+EnvironmentFile=/opt/dabiao-tv/.env
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

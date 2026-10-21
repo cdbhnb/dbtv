@@ -1,0 +1,17 @@
+services:
+  dabiao-tv:
+    build: .
+    container_name: dabiao-tv
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: file:/app/data/dabiao.db
+      HOST: 0.0.0.0
+      PORT: 8787
+    ports:
+      - "8787:8787"
+    volumes:
+      - dabiao_data:/app/data
+
+volumes:
+  dabiao_data:
