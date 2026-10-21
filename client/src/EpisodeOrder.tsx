@@ -1,0 +1,3 @@
+import React,{useState} from 'react';
+export function useEpisodeOrder(){const [reverse,setReverse]=useState(()=>{try{return localStorage.getItem('dbtv.episodeOrder')==='desc'}catch{return false}});const choose=(value:boolean)=>{setReverse(value);try{localStorage.setItem('dbtv.episodeOrder',value?'desc':'asc')}catch{}};return [reverse,choose] as const;}
+export default function EpisodeOrder({reverse,onChange}:{reverse:boolean;onChange:(value:boolean)=>void}){return <div className="episode-order" role="group" aria-label="集数显示顺序"><button type="button" aria-pressed={!reverse} className={!reverse?'active':''} onClick={()=>onChange(false)}>正序</button><button type="button" aria-pressed={reverse} className={reverse?'active':''} onClick={()=>onChange(true)}>倒序</button></div>}

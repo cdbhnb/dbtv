@@ -1,6 +1,6 @@
 # 大彪TV
 
-一个运行在 Termux 手机上的网页版 TVBox。手机同时充当前端服务器、Express 后端和 SQLite 数据库，电视、电脑或其他手机可以通过同一 Wi-Fi 访问。
+一个支持 Termux、普通 Linux、宝塔和 1Panel 的网页版 TVBox。部署时可选 SQLite、MySQL、PostgreSQL；使用 SQLite 时，手机即可独立运行前端、Express 后端和数据库，电视、电脑或其他手机可以通过同一 Wi-Fi 访问。
 
 本项目不使用苹果 CMS，也不内置盗版接口、破解解析接口或绕过授权的功能。请仅配置你自己拥有或已经获得授权的 JSON、NAS、WebDAV、Alist 和视频地址。
 
@@ -8,13 +8,16 @@
 
 - React + Vite + TypeScript 前端
 - Node.js + Express + TypeScript 后端
-- Prisma + SQLite 本地数据库
+- Prisma 数据库：部署时可选择 SQLite、MySQL、PostgreSQL
 - local、manual、tvbox-json 资源源
 - TVBox 风格 JSON 基础解析
 - MP4 与 M3U8 播放
 - 首页、资源源、搜索、详情、播放、收藏、历史
 - 后台配置导入和手动视频 API
 - PWA、电视端友好深色界面
+- 账号注册开关、积分赠送/调整、积分兑换会员、等级权限和审计流水（未接在线支付）
+
+会员与积分操作说明见 [会员系统说明](docs/MEMBERSHIP.md)。用户入口 `/membership`，后台入口 `/admin/membership`。升级前备份数据库；积分与会员数据保存在部署时选择的数据库里，不属于公开源码。
 
 ## 项目结构
 
@@ -27,12 +30,12 @@ output/pdf/   Termux 部署教程
 
 ## 本地运行
 
-需要 Node.js 20 或更高版本。
+需要 Node.js 20.19+ 或 22 LTS。
 
 ```bash
 npm install
 cp .env.example .env
-npx prisma generate --schema prisma/schema.prisma
+npm run setup
 npm run db:push
 npm run db:seed
 npm run dev
@@ -47,9 +50,9 @@ npm start
 
 浏览器打开 `http://127.0.0.1:8787`。
 
-首次启动空数据库时，浏览器会自动进入 `/install` 安装向导。向导会检查 SQLite 环境并创建唯一管理员，密码至少 8 位；已有用户的旧 Termux 数据库会直接视为已安装，不能重复初始化。
+首次启动空数据库时，浏览器会自动进入 `/install` 安装向导。向导检查当前所选数据库并创建管理员，密码至少 6 位；已有用户的旧 Termux 数据库会直接视为已安装，不能重复初始化。管理员仍建议使用更长的密码。
 
-数据库连接使用启动前 `.env` 中的 `DATABASE_URL`，默认是 `file:./dev.db`（SQLite 文件位于 `prisma/dev.db`）。安装页会显示当前数据库类型、路径和可写状态。登录管理后台后，在“源配置”页面点击“从 tvbox.json 恢复”，即可把仓库中的旧 TVBox 播放源配置重新写入数据库；该操作只恢复接口配置，不会自动下载内容。
+部署时运行 `npm run setup` 选择 SQLite、MySQL 或 PostgreSQL，连接保存在 `.env`。安装页仅显示类型和连接状态，不公开连接凭证。旧版 `file:./dev.db` 继续对应 `prisma/dev.db`；新示例使用 `data/dabiao.db`。切换数据库不会自动迁移旧数据，完整配置、Docker、备份和切换注意事项见 [数据库部署说明](docs/DATABASES.md)。登录管理后台后，在“源配置”页面点击“从 tvbox.json 恢复”，即可恢复接口配置，但不会自动下载内容。
 
 ## Termux 部署
 
@@ -63,7 +66,7 @@ termux-setup-storage
 
 cd ~/dbtv/files-pasted-by-the-user-tvbox
 npm install
-npx prisma generate --schema prisma/schema.prisma
+npm run setup
 npm run db:push
 npm run db:seed
 npm run build
@@ -93,7 +96,8 @@ http://192.168.1.25:8787
 `.env` 示例：
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_PROVIDER=sqlite
+DATABASE_URL="file:../data/dabiao.db"
 PORT=8787
 HOST="0.0.0.0"
 ```
@@ -101,7 +105,7 @@ HOST="0.0.0.0"
 SQLite 数据库是本地文件，请定期备份：
 
 ```bash
-cp prisma/dev.db ~/web-tvbox-backup.db
+sh scripts/backup.sh
 ```
 
 ## JSON 播放源

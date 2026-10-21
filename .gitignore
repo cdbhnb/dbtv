@@ -1,4 +1,7 @@
 node_modules/
+.generated/
+.env.setup-*.tmp
+backups/
 .next/
 dist/
 build/

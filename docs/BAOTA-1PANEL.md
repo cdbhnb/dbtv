@@ -2,15 +2,16 @@
 
 ## 普通 Linux
 
-安装 Node.js 20+、Git 和 SQLite。将项目放到 `/opt/dabiao-tv`，复制 `.env.example` 为 `.env`，然后执行：
+安装 Node.js 20.19+ 或 22 LTS、Git。将项目放到 `/opt/dabiao-tv`，复制 `.env.example` 为 `.env`，然后执行：
 
 ```sh
 npm ci
+npm run setup
 npm run build
 npm start
 ```
 
-首次打开站点会进入 `/install`。安装向导只允许在数据库没有用户时运行，管理员密码至少 8 位；完成后再次访问 `/install` 会失效。
+`npm run setup` 可选 SQLite、MySQL、PostgreSQL。外部数据库先在面板创建专用库和用户，完整说明见 [数据库部署](DATABASES.md)。首次打开站点会进入 `/install`。安装向导只允许在数据库没有用户时运行，管理员密码至少 6 位；完成后再次访问 `/install` 会失效。管理员建议使用长密码。
 
 ## 宝塔
 

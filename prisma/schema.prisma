@@ -42,6 +42,7 @@ model Video {
   cover     String?
   year      Int?
   category  String?
+  originalCategory String?
   area      String?
   language  String?
   tags      String?
@@ -169,6 +170,8 @@ model CategoryBinding {
 model User {
   id           Int          @id @default(autoincrement())
   username     String       @unique
+  memberNo     String?      @unique
+  accessGroupIds String?
   displayName  String?
   avatarUrl    String?
   lastLoginAt  DateTime?
@@ -176,11 +179,68 @@ model User {
   passwordHash String
   role         String       @default("user")
   enabled      Boolean      @default(true)
+  points       Int          @default(0)
+  walletVersion Int         @default(0)
+  membershipPlanId String?
+  membershipExpiresAt DateTime?
+  membershipPlan MembershipPlan? @relation(fields: [membershipPlanId], references: [id], onDelete: SetNull)
   pageAccess   String       @default("home,sources,search,favorites,history")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   sourceAccess UserSource[]
   sessions     Session[]
+}
+
+model MembershipPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  pricePoints Int      @default(0)
+  durationDays Int     @default(30)
+  enabled     Boolean  @default(false)
+  permissions String
+  sourceKeys  String
+  accessGroupIds String?
+  allSources  Boolean  @default(false)
+  contentRules String?
+  version     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+}
+
+model AccessGroup {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  enabled     Boolean  @default(true)
+  permissions String
+  sourceKeys  String
+  categoryRules String?
+  version     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Append-only wallet journal. Financial state must only change through the transaction service.
+model PointLedger {
+  id           String   @id @default(cuid())
+  userId       Int
+  actorId      Int?
+  operationKey String   @unique
+  requestHash  String
+  kind         String
+  delta        Int
+  balanceAfter Int
+  reason       String
+  planId       String?
+  planName     String?
+  durationDays Int?
+  expiresAfter DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 model UserSource {
